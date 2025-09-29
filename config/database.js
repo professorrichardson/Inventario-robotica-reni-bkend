@@ -5,17 +5,27 @@ dotenv.config();
 
 const { Pool } = pkg;
 
-// Configuração do pool de conexões PostgreSQL para Supabase
+// Log das configurações (sem senha)
+console.log('🔧 Configuração do Banco:', {
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  ssl: process.env.DB_SSL
+});
+
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-  max: 10, // número máximo de clientes no pool
+  ssl: process.env.DB_SSL === 'true' ? { 
+    rejectUnauthorized: false 
+  } : false,
+  max: 5,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 15000,
 });
 
 // Testar conexão
