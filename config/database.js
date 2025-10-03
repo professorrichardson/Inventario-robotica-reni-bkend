@@ -5,27 +5,43 @@ dotenv.config();
 
 const { Pool } = pkg;
 
-// Usar DATABASE_URL obrigatoriamente
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  console.error('❌ DATABASE_URL não definida!');
-  console.error('💡 Configure DATABASE_URL no Render com a string completa de conexão');
+// VERIFICAÇÃO RÍGIDA
+if (!process.env.DATABASE_URL) {
+  console.error('❌ ERRO: DATABASE_URL não definida!');
   process.exit(1);
 }
 
-// Log seguro (sem mostrar senha)
-const safeLogString = connectionString.replace(/:[^:@]+@/, ':***@');
-console.log('🔗 String de conexão:', safeLogString);
+console.log('🔗 Configurando pool de conexão...');
 
+// Criar UM ÚNICO pool global
 const pool = new Pool({
-  connectionString: connectionString,
+  connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
   },
-  max: 5,
+  // Configurações otimizadas para Render
+  max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 20000,
+  connectionTimeoutMillis: 10000,
+  // Prevenir vazamentos de conexão
+  allowExitOnIdle: true
+});
+
+// Log de eventos do pool
+pool.on('connect', () => {
+  console.log('✅ Nova conexão estabelecida com o banco');
+});
+
+pool.on('error', (err) => {
+  console.error('❌ Erro no pool:', err);
+});
+
+pool.on('acquire', () => {
+  console.log('🔗 Cliente adquirido do pool');
+});
+
+pool.on('remove', () => {
+  console.log('🗑️ Cliente removido do pool');
 });
 
 // Função para inicializar banco
@@ -33,16 +49,16 @@ export const initDatabase = async () => {
   let client;
   
   try {
-    console.log('🔄 Conectando ao banco de dados...');
+    console.log('🔄 Inicializando banco de dados...');
     
     client = await pool.connect();
-    console.log('✅ Conexão com PostgreSQL estabelecida!');
+    console.log('✅ Cliente conectado para inicialização');
     
-    // Testar versão
-    const versionResult = await client.query('SELECT version()');
-    console.log('🗄️ PostgreSQL conectado com sucesso');
+    // Testar conexão
+    const result = await client.query('SELECT NOW() as current_time');
+    console.log('⏰ Hora do banco:', result.rows[0].current_time);
     
-    // Criar tabela se não existir
+    // Criar tabela
     await client.query(`
       CREATE TABLE IF NOT EXISTS componentes (
         id SERIAL PRIMARY KEY,
@@ -51,20 +67,18 @@ export const initDatabase = async () => {
         data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('✅ Tabela "componentes" verificada/criada');
+    console.log('✅ Tabela componentes verificada');
     
   } catch (error) {
-    console.error('❌ ERRO DE CONEXÃO:', error.message);
-    console.log('🔧 Possíveis causas:');
-    console.log('   - Senha incorreta no DATABASE_URL');
-    console.log('   - Host/usuário incorretos');
-    console.log('   - Supabase não está aceitando conexões');
+    console.error('❌ Erro na inicialização:', error);
     throw error;
   } finally {
     if (client) {
       client.release();
+      console.log('🔓 Cliente liberado');
     }
   }
 };
 
+// Exportar o MESMO pool para toda a aplicação
 export default pool;
