@@ -4,7 +4,9 @@ import multer from 'multer';
 import csv from 'csv-parser';
 import fs from 'fs';
 import dotenv from 'dotenv';
-import pool, { initDatabase } from './config/database.js';
+// Carregar variáveis de ambiente
+dotenv.config();
+
 
 console.log('🔍 INICIANDO SERVIDOR - VERIFICAÇÃO:');
 console.log('📍 DATABASE_URL definida:', !!process.env.DATABASE_URL);
@@ -19,9 +21,10 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-// Carregar variáveis de ambiente
-dotenv.config();
 
+
+
+import pool, { initDatabase } from './config/database.js';
 const app = express();
 const PORT = process.env.PORT || 10000;
 
