@@ -1,31 +1,21 @@
 import pkg from 'pg';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 const { Pool } = pkg;
 
-// Log das configurações (sem senha)
-console.log('🔧 Configuração do Banco:', {
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  ssl: process.env.DB_SSL
-});
+// Usar DATABASE_URL se disponível, senão usar variáveis separadas
+const connectionString = process.env.DATABASE_URL || 
+  `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+
+console.log('🔗 String de conexão:', connectionString.replace(/:[^:@]+@/, ':***@'));
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  ssl: process.env.DB_SSL === 'true' ? { 
-    rejectUnauthorized: false 
-  } : false,
-  max: 5,
+  connectionString: connectionString,
+  ssl: {
+    rejectUnauthorized: false,
+    servername: process.env.DB_HOST || 'aws-1-us-east-2.pooler.supabase.com'
+  },
+  max: 3,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 15000,
+  connectionTimeoutMillis: 20000,
 });
 
 // Testar conexão
