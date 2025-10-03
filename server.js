@@ -6,6 +6,19 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import pool, { initDatabase } from './config/database.js';
 
+console.log('🔍 INICIANDO SERVIDOR - VERIFICAÇÃO:');
+console.log('📍 DATABASE_URL definida:', !!process.env.DATABASE_URL);
+console.log('📍 NODE_ENV:', process.env.NODE_ENV);
+console.log('📍 PORT:', process.env.PORT);
+console.log('📍 FRONTEND_URL:', process.env.FRONTEND_URL);
+
+if (!process.env.DATABASE_URL) {
+  console.error('🚨 ERRO CRÍTICO: DATABASE_URL não definida!');
+  console.log('💡 SOLUÇÃO: No Render, adicione a variável DATABASE_URL com:');
+  console.log('   postgresql://postgres.epnkfsjetvitciwxkemv:[SENHA]@aws-1-us-east-2.pooler.supabase.com:5432/postgres');
+  process.exit(1);
+}
+
 // Carregar variáveis de ambiente
 dotenv.config();
 
